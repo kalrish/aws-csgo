@@ -1,0 +1,18 @@
+[Unit]
+Description=Counter Strike: Global Offensive game server
+Documentation=https://developer.valvesoftware.com/wiki/Counter-Strike:_Global_Offensive_Dedicated_Servers
+After=network.target
+After=csgo-update.service
+Wants=csgo-update.service
+
+[Service]
+Type=simple
+ExecStart=/bin/sh -ex -- {{ steam_home }}/launch.sh
+User=steam
+Group=steam
+WorkingDirectory={{ csgo_install_dir }}
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

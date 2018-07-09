@@ -1,0 +1,1 @@
+exec {{ csgo_install_dir }}/srcds_run -autoupdate -game csgo +sv_setsteamaccount "$(aws --region {{ region }} --query 'Parameter.Value' --output text ssm get-parameter --name '/csgo/gslt' --with-decryption)" -authkey "$(aws --region {{ region }} --query 'Parameter.Value' --output text ssm get-parameter --name '/csgo/web-api-key' --with-decryption)" -usercon -tickrate 128

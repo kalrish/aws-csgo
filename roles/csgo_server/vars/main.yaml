@@ -1,0 +1,3 @@
+---
+steam_home: /home/steam
+csgo_install_dir: '{{ steam_home }}/csgo'

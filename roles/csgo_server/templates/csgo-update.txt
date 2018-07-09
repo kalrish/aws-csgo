@@ -1,0 +1,5 @@
+@ShutdownOnFailedCommand 1
+login anonymous
+force_install_dir {{ csgo_install_dir }}
+app_update 740
+quit

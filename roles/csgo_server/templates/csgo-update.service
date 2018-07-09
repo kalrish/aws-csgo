@@ -1,0 +1,16 @@
+[Unit]
+Description=Counter Strike: Global Offensive game server update
+Documentation=https://developer.valvesoftware.com/wiki/Counter-Strike:_Global_Offensive_Dedicated_Servers
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart={{ steamcmd_path.stdout }} +runscript {{ steam_home }}/csgo-update.txt
+User=steam
+Group=steam
+WorkingDirectory={{ steam_home }}
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

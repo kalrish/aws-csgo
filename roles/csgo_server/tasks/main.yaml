@@ -1,0 +1,165 @@
+---
+- name: Enable i386 architecture
+  command: dpkg --add-architecture i386
+  become: yes
+  become_user: root
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+- name: Update system software
+  apt:
+     update_cache: yes
+     upgrade: dist
+  become: yes
+  become_user: root
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+- name: Update system software
+  pacman:
+     update_cache: yes
+     upgrade: yes
+  when: ansible_distribution == 'Archlinux'
+- name: Accept SteamCMD license
+  debconf:
+     name: steamcmd
+     question: steam/question
+     value: 'I AGREE'
+     vtype: select
+  become: yes
+  become_user: root
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+- name: Install required packages
+  apt:
+     name: '{{ item }}'
+     state: present
+  with_items:
+     - awscli
+     - curl
+     - git
+     - openssh-server
+     - steamcmd
+  become: yes
+  become_user: root
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+- name: Install required packages
+  pacman:
+     name: '{{ item }}'
+     state: present
+  with_items:
+     - aws-cli
+     - curl
+     - git
+     - openssh
+  when: ansible_distribution == 'Archlinux'
+- name: Install ebsnvme-id script
+  copy:
+     src: ebsnvme-id.py
+     dest: /sbin/ebsnvme-id
+     mode: u=rwx,g=rwx,o=rx
+  become: yes
+  become_user: root
+- name: Create udev rule for EBS volumes exposed as NVMe devices
+  copy:
+     src: 70-ebs-nvme.rules
+     dest: /etc/udev/rules.d/70-ebs-nvme.rules
+  become: yes
+  become_user: root
+- name: Reload udev rules
+  command: udevadm trigger --verbose
+  become: yes
+  become_user: root
+- name: Format Steam volume
+  filesystem:
+     dev: '{{ steam_volume_device_name }}'
+     fstype: ext4
+     opts: '-v -m 0 -E lazy_itable_init=0,lazy_journal_init=0'
+  become: yes
+  become_user: root
+- name: Mount Steam volume
+  mount:
+     state: mounted
+     src: '{{ steam_volume_device_name }}'
+     fstype: ext4
+     opts: 'nodev,nofail,nosuid,rw'
+     path: '{{ steam_home }}'
+  become: yes
+  become_user: root
+- name: Create Steam group
+  group:
+     state: present
+     name: steam
+  become: yes
+  become_user: root
+- name: Create Steam user
+  user:
+     state: present
+     name: steam
+     comment: 'SteamCMD safe user'
+     append: yes
+     group: steam
+     system: no
+     home: '{{ steam_home }}'
+     create_home: yes
+  become: yes
+  become_user: root
+- name: Set volume ownership
+  file:
+     dest: '{{ steam_home }}'
+     recurse: yes
+     owner: steam
+     group: steam
+  become: yes
+  become_user: root
+- name: Retrieve SteamCMD executable path
+  command: which steamcmd
+  register: steamcmd_path
+- name: Upload SteamCMD game server update script
+  template:
+     src: 'csgo-update.txt'
+     dest: '{{ steam_home }}/csgo-update.txt'
+     owner: steam
+     group: steam
+     mode: u=rw,g=r,o=r
+  become: yes
+  become_user: steam
+- name: Create game server installation directory
+  file:
+     path: '{{ csgo_install_dir }}'
+     state: directory
+     owner: steam
+     group: steam
+  become: yes
+  become_user: steam
+- name: Install game server
+  command: '{{ steamcmd_path.stdout }} +login anonymous +force_install_dir {{ csgo_install_dir }} +app_update 740 validate +quit'
+  args:
+     chdir: '{{ csgo_install_dir }}'
+  become: yes
+  become_user: steam
+- name: Upload systemd services
+  template:
+     src: 'csgo-{{ item }}.service'
+     dest: '/etc/systemd/system/csgo-{{ item }}.service'
+     owner: root
+     group: root
+     mode: u=rw,g=r,o=r
+  with_items:
+     - server
+     - update
+  become: yes
+  become_user: root
+- name: Upload game server launch script
+  template:
+     src: 'launch.sh'
+     dest: '{{ steam_home }}/launch.sh'
+     owner: steam
+     group: steam
+     mode: u=rw,g=r,o=r
+  become: yes
+  become_user: steam
+- name: Enable systemd services
+  systemd:
+     name: 'csgo-{{ item }}.service'
+     enabled: yes
+  with_items:
+     - update
+     - server
+  become: yes
+  become_user: root
