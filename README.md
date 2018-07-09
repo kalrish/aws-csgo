@@ -3,6 +3,11 @@ AWS-based Counter Strike: Global Offensive server
 
 This repository contains code to deploy, provision and manage a _Counter Strike: Global Offensive_ server based on the Amazon Web Services cloud platform.
 
+<p align="center">
+<img alt="Counter Strike 1.6 logo" src="img/cs16.svg" height="200px" width="200px" align="middle" />
+<img alt="AWS logo" src="img/aws.svg" height="250px" width="250px" align="middle" />
+</p>
+
 
 Deployment
 --------------------------------------------------------------------------------
