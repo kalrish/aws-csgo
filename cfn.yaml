@@ -54,6 +54,11 @@ Resources:
          CidrBlock: !Ref VpcIpv4AddressBlock
          EnableDnsSupport: true
          EnableDnsHostnames: true
+   Ipv6VpcCidrBlock:
+      Type: 'AWS::EC2::VPCCidrBlock'
+      Properties:
+         AmazonProvidedIpv6CidrBlock: true
+         VpcId: !Ref Vpc
    InternetGateway:
       Type: 'AWS::EC2::InternetGateway'
    InternetGatewayAttachment:
