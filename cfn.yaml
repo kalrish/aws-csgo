@@ -66,6 +66,10 @@ Resources:
       Properties:
          InternetGatewayId: !Ref InternetGateway
          VpcId: !Ref Vpc
+   EgressInternetGateway:
+      Type: 'AWS::EC2::EgressOnlyInternetGateway'
+      Properties:
+         VpcId: !Ref Vpc
    ServerSubnet:
       Type: 'AWS::EC2::Subnet'
       Properties:
