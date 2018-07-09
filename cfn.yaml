@@ -162,6 +162,10 @@ Resources:
                ToPort: 4380
                IpProtocol: udp
          VpcId: !Ref Vpc
+         Tags:
+            -
+               Key: Name
+               Value: csgo-server
    ServerInstanceRole:
       Type: AWS::IAM::Role
       Properties:
@@ -218,6 +222,10 @@ Resources:
       Properties:
          GroupDescription: 'Instances in the private subnets, which must be able to access the NAT instance in order to initiate network connections outside of the VPC.'
          VpcId: !Ref Vpc
+         Tags:
+            -
+               Key: Name
+               Value: csgo-nat-access
    NatInstanceSecurityGroup:
       Type: 'AWS::EC2::SecurityGroup'
       Properties:
@@ -229,6 +237,10 @@ Resources:
                ToPort: '-1'
                IpProtocol: '-1'
          VpcId: !Ref Vpc
+         Tags:
+            -
+               Key: Name
+               Value: csgo-nat-instance
    NatInstance:
       DependsOn: InternetGatewayAttachment
       Type: 'AWS::EC2::Instance'
@@ -294,6 +306,10 @@ Resources:
       Properties:
          GroupDescription: 'CodeBuild project building the Counter Strike: Global Offensive AMI, which must access the instance used to that end over SSH.'
          VpcId: !Ref Vpc
+         Tags:
+            -
+               Key: Name
+               Value: csgo-ami-container
    AmiBuildInstanceSecurityGroup:
       Type: 'AWS::EC2::SecurityGroup'
       Properties:
@@ -305,6 +321,10 @@ Resources:
                ToPort: 22
                IpProtocol: tcp
          VpcId: !Ref Vpc
+         Tags:
+            -
+               Key: Name
+               Value: csgo-ami-instance
    AmiBuildRole:
       Type: 'AWS::IAM::Role'
       Properties:
