@@ -5,6 +5,10 @@ Parameters:
    AmiBuildSubnetAvailabilityZone:
       Description: 'Availability zone in which to create the subnet used to build the AMI. It must support CodeBuild.'
       Type: AWS::EC2::AvailabilityZone::Name
+   CodeRepositoryCloneUrlHttp:
+      Description: 'HTTP clone URL of the GitHub repository containing the aws-csgo code.'
+      Type: String
+      Default: 'https://github.com/kalrish/aws-csgo.git'
    NatInstanceImageId:
       Description: 'ID of the AMI to use for the NAT instance.'
       Type: AWS::EC2::Image::Id
@@ -36,9 +40,16 @@ Metadata:
                - NatInstanceImageId
                - NatInstanceKeyName
                - NatInstanceType
+         -
+            Label:
+               default: Sources
+            Parameters:
+               - CodeRepositoryCloneUrlHttp
       ParameterLabels:
          AmiBuildSubnetAvailabilityZone:
             default: AMI build subnet availability zone
+         CodeRepositoryCloneUrlHttp:
+            default: aws-csgo repository
          NatInstanceImageId:
             default: AMI ID
          NatInstanceKeyName:
@@ -475,7 +486,7 @@ Resources:
          ServiceRole: !GetAtt AmiBuildRole.Arn
          Source:
             Type: GITHUB
-            Location: 'https://github.com/kalrish/aws-csgo.git'
+            Location: !Ref CodeRepositoryCloneUrlHttp
             GitCloneDepth: 1
             BuildSpec: 'buildspec.yaml'
          Environment:
