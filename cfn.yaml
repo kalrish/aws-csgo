@@ -4,13 +4,13 @@ Description: 'Platform to deploy, provision and manage Counter Strike: Global Of
 Parameters:
    AmiBuildSubnetAvailabilityZone:
       Description: 'Availability zone in which to create the subnet used to build the AMI. It must support CodeBuild.'
-      Type: 'AWS::EC2::AvailabilityZone::Name'
+      Type: AWS::EC2::AvailabilityZone::Name
    NatInstanceImageId:
       Description: 'ID of the AMI to use for the NAT instance.'
-      Type: 'AWS::EC2::Image::Id'
+      Type: AWS::EC2::Image::Id
    NatInstanceKeyName:
       Description: 'Name of the key pair to assign to the NAT instance, used to SSH into it.'
-      Type: 'AWS::EC2::KeyPair::KeyName'
+      Type: AWS::EC2::KeyPair::KeyName
    NatInstanceType:
       Description: 'Type of the NAT instance. Since it will only be used by CodeBuild to reach the ECS repository and EC2, it need not be any bigger than a t2.micro.'
       Type: String
@@ -49,29 +49,29 @@ Metadata:
             default: IPv4 address block
 Resources:
    Vpc:
-      Type: 'AWS::EC2::VPC'
+      Type: AWS::EC2::VPC
       Properties:
          CidrBlock: !Ref VpcIpv4AddressBlock
          EnableDnsSupport: true
          EnableDnsHostnames: true
    Ipv6VpcCidrBlock:
-      Type: 'AWS::EC2::VPCCidrBlock'
+      Type: AWS::EC2::VPCCidrBlock
       Properties:
          AmazonProvidedIpv6CidrBlock: true
          VpcId: !Ref Vpc
    InternetGateway:
-      Type: 'AWS::EC2::InternetGateway'
+      Type: AWS::EC2::InternetGateway
    InternetGatewayAttachment:
-      Type: 'AWS::EC2::VPCGatewayAttachment'
+      Type: AWS::EC2::VPCGatewayAttachment
       Properties:
          InternetGatewayId: !Ref InternetGateway
          VpcId: !Ref Vpc
    EgressInternetGateway:
-      Type: 'AWS::EC2::EgressOnlyInternetGateway'
+      Type: AWS::EC2::EgressOnlyInternetGateway
       Properties:
          VpcId: !Ref Vpc
    ServerSubnet:
-      Type: 'AWS::EC2::Subnet'
+      Type: AWS::EC2::Subnet
       Properties:
          VpcId: !Ref Vpc
          CidrBlock: !Select [ 0 , !Cidr [ !GetAtt Vpc.CidrBlock , 2 , 4 ] ]
@@ -82,7 +82,7 @@ Resources:
                Value: csgo-server
    ServerSubnetIpv6CidrBlock:
       DependsOn: Ipv6VpcCidrBlock
-      Type: 'AWS::EC2::SubnetCidrBlock'
+      Type: AWS::EC2::SubnetCidrBlock
       Properties:
          Ipv6CidrBlock: !Select
             - 0
@@ -94,29 +94,29 @@ Resources:
                - 64
          SubnetId: !Ref ServerSubnet
    ServerSubnetRouteTable:
-      Type: 'AWS::EC2::RouteTable'
+      Type: AWS::EC2::RouteTable
       Properties:
          VpcId: !Ref Vpc
    ServerSubnetRouteTableAssociation:
-      Type: 'AWS::EC2::SubnetRouteTableAssociation'
+      Type: AWS::EC2::SubnetRouteTableAssociation
       Properties:
          RouteTableId: !Ref ServerSubnetRouteTable
          SubnetId: !Ref ServerSubnet
    ServerSubnetInternetRoute:
       DependsOn: InternetGatewayAttachment
-      Type: 'AWS::EC2::Route'
+      Type: AWS::EC2::Route
       Properties:
          RouteTableId: !Ref ServerSubnetRouteTable
          GatewayId: !Ref InternetGateway
          DestinationCidrBlock: 0.0.0.0/0
    ServerSubnetEgressInternetGatewayRoute:
-      Type: 'AWS::EC2::Route'
+      Type: AWS::EC2::Route
       Properties:
          RouteTableId: !Ref ServerSubnetRouteTable
          EgressOnlyInternetGatewayId: !Ref EgressInternetGateway
          DestinationIpv6CidrBlock: '::/0'
    ServerSecurityGroup:
-      Type: 'AWS::EC2::SecurityGroup'
+      Type: AWS::EC2::SecurityGroup
       Properties:
          GroupDescription: 'Public Counter Strike: Global Offensive servers.'
          SecurityGroupIngress:
@@ -218,7 +218,7 @@ Resources:
                         Key: Name
                         Value: 'CS:GO server'
    NatSecurityGroup:
-      Type: 'AWS::EC2::SecurityGroup'
+      Type: AWS::EC2::SecurityGroup
       Properties:
          GroupDescription: 'Instances in the private subnets, which must be able to access the NAT instance in order to initiate network connections outside of the VPC.'
          VpcId: !Ref Vpc
@@ -227,7 +227,7 @@ Resources:
                Key: Name
                Value: csgo-nat-access
    NatInstanceSecurityGroup:
-      Type: 'AWS::EC2::SecurityGroup'
+      Type: AWS::EC2::SecurityGroup
       Properties:
          GroupDescription: 'NAT instance, to which instances residing in the private subnet must be allowed access.'
          SecurityGroupIngress:
@@ -243,7 +243,7 @@ Resources:
                Value: csgo-nat-instance
    NatInstance:
       DependsOn: InternetGatewayAttachment
-      Type: 'AWS::EC2::Instance'
+      Type: AWS::EC2::Instance
       Properties:
          InstanceType: !Ref NatInstanceType
          ImageId: !Ref NatInstanceImageId
@@ -262,7 +262,7 @@ Resources:
                Value: 'CS:GO NAT'
    AmiBuildSubnet:
       DependsOn: Ipv6VpcCidrBlock
-      Type: 'AWS::EC2::Subnet'
+      Type: AWS::EC2::Subnet
       Properties:
          VpcId: !Ref Vpc
          CidrBlock: !Select [ 1, !Cidr [ !GetAtt Vpc.CidrBlock, 2, 4 ] ]
@@ -281,28 +281,28 @@ Resources:
                Key: Name
                Value: csgo-amibuild
    AmiBuildSubnetRouteTable:
-      Type: 'AWS::EC2::RouteTable'
+      Type: AWS::EC2::RouteTable
       Properties:
          VpcId: !Ref Vpc
    AmiBuildSubnetRouteTableAssociation:
-      Type: 'AWS::EC2::SubnetRouteTableAssociation'
+      Type: AWS::EC2::SubnetRouteTableAssociation
       Properties:
          RouteTableId: !Ref AmiBuildSubnetRouteTable
          SubnetId: !Ref AmiBuildSubnet
    AmiBuildSubnetNatRoute:
-      Type: 'AWS::EC2::Route'
+      Type: AWS::EC2::Route
       Properties:
          RouteTableId: !Ref AmiBuildSubnetRouteTable
          InstanceId: !Ref NatInstance
          DestinationCidrBlock: 0.0.0.0/0
    AmiBuildSubnetEgressInternetGatewayRoute:
-      Type: 'AWS::EC2::Route'
+      Type: AWS::EC2::Route
       Properties:
          RouteTableId: !Ref AmiBuildSubnetRouteTable
          EgressOnlyInternetGatewayId: !Ref EgressInternetGateway
          DestinationIpv6CidrBlock: '::/0'
    AmiBuildContainerSecurityGroup:
-      Type: 'AWS::EC2::SecurityGroup'
+      Type: AWS::EC2::SecurityGroup
       Properties:
          GroupDescription: 'CodeBuild project building the Counter Strike: Global Offensive AMI, which must access the instance used to that end over SSH.'
          VpcId: !Ref Vpc
@@ -311,7 +311,7 @@ Resources:
                Key: Name
                Value: csgo-ami-container
    AmiBuildInstanceSecurityGroup:
-      Type: 'AWS::EC2::SecurityGroup'
+      Type: AWS::EC2::SecurityGroup
       Properties:
          GroupDescription: 'Instances used to create the Counter Strike: Global Offensive AMIs, which must allow SSH access to the CodeBuild-based container.'
          SecurityGroupIngress:
@@ -326,7 +326,7 @@ Resources:
                Key: Name
                Value: csgo-ami-instance
    AmiBuildRole:
-      Type: 'AWS::IAM::Role'
+      Type: AWS::IAM::Role
       Properties:
          AssumeRolePolicyDocument:
             Version: '2012-10-17'
@@ -468,7 +468,7 @@ Resources:
          Roles:
             - !Ref AmiBuildRole
    AmiBuildProject:
-      Type: 'AWS::CodeBuild::Project'
+      Type: AWS::CodeBuild::Project
       Properties:
          Name: csgo-ami
          Description: 'Build AMI to host Counter Strike: Global Offensive server.'
