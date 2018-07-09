@@ -1,0 +1,65 @@
+{
+	"variables": {
+		"instance_type": "{{ env `INSTANCE_TYPE` }}",
+		"region": "{{ env `AWS_REGION` }}",
+		"security_group_ids": "{{ env `INSTANCE_SECURITY_GROUPS` }}",
+		"shell_execute_command": "{{ env `SHELL_EXECUTE_COMMAND` }}",
+		"source_ami_id": "{{ env `SOURCE_AMI_ID` }}",
+		"ssh_user": "{{ env `SSH_USER` }}",
+		"steam_volume_device_name": "/dev/xvdf",
+		"subnet_id": "{{ env `INSTANCE_SUBNET` }}",
+		"vpc_id": "{{ env `INSTANCE_VPC` }}"
+	},
+	"provisioners": [
+		{
+			"type": "shell",
+			"script": "prepare.sh",
+			"execute_command": "{{ user `shell_execute_command` }} {{ .Path }}"
+		},
+		{
+			"type": "ansible",
+			"playbook_file": "playbook.yaml",
+			"user": "{{ user `ssh_user` }}",
+			"extra_arguments": [
+				"-vv",
+				"--extra-vars",
+				"region={{ user `region` }} steam_volume_device_name={{ user `steam_volume_device_name` }}"
+			]
+		}
+	],
+	"builders": [
+		{
+			"ami_name": "csgo-server {{ isotime \"2006-01-02-15-04-05\" }}",
+			"ami_virtualization_type": "hvm",
+			"associate_public_ip_address": true,
+			"instance_type": "{{ user `instance_type` }}",
+			"launch_block_device_mappings": [
+				{
+					"delete_on_termination": true,
+					"device_name": "{{ user `steam_volume_device_name` }}",
+					"encrypted": false,
+					"volume_size": 18
+				}
+			],
+			"run_tags": {
+				"Packer": "csgo"
+			},
+			"security_group_ids": "{{ user `security_group_ids` }}",
+			"source_ami": "{{ user `source_ami_id` }}",
+			"ssh_interface": "private_ip",
+			"ssh_keypair_name": "csgo",
+			"ssh_private_key_file": "csgo.pem",
+			"ssh_username": "{{ user `ssh_user` }}",
+			"subnet_id": "{{ user `subnet_id` }}",
+			"type": "amazon-ebs",
+			"vpc_id": "{{ user `vpc_id` }}"
+		}
+	],
+	"post-processors": [
+		{
+			"type": "manifest",
+			"output": "manifest.json",
+			"strip_path": true
+		}
+	]
+}
