@@ -85,6 +85,10 @@ In order to connect to the instance, either through SSH or with the game client,
 
     $  INSTANCE_IP=$(aws --query 'Reservations[0].Instances[0].PublicIpAddress' --output text ec2 describe-instances --instance-ids ${INSTANCE_ID})
 
+Alternatively, you may use the DNS name, which is more catchy and will let you match it in your SSH configuration. Retrieve it as follows:
+
+    $  INSTANCE_HOST=$(aws --query 'Reservations[0].Instances[0].PublicDnsName' --output text ec2 describe-instances --instance-ids ${INSTANCE_ID})
+
 To inspect the state of the server, upload your game configuration or perform any kind of maintenance, you can SSH into the instance as follows:
 
     $  ssh -o StrictHostKeyChecking=no -i ~/.ssh/csgo.pem ubuntu@${INSTANCE_IP}
