@@ -243,10 +243,19 @@ Resources:
                Value: 'CS:GO NAT'
       DependsOn: InternetGatewayAttachment
    AmiBuildSubnet:
+      DependsOn: Ipv6VpcCidrBlock
       Type: 'AWS::EC2::Subnet'
       Properties:
          VpcId: !Ref Vpc
          CidrBlock: !Select [ 1, !Cidr [ !GetAtt Vpc.CidrBlock, 2, 4 ] ]
+         Ipv6CidrBlock: !Select
+            - 1
+            - !Cidr
+               - !Select
+                  - 0
+                  - !GetAtt Vpc.Ipv6CidrBlocks
+               - 2
+               - 64
          AvailabilityZone: !Ref AmiBuildSubnetAvailabilityZone
          Tags:
             -
