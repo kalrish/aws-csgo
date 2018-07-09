@@ -80,6 +80,8 @@ That's about it. Don't forget to stop the NAT instance when the AMI build finish
 Usage
 --------------------------------------------------------------------------------
 
+Using the AWS server involves launching an instance, connecting to it and, finally, stopping or terminating it when you are done playing. This is made possible by the AMI, which lets us dispose of instances as we please and provides for a recovery strategy in case of failure. Thanks to Amazon's pay-as-you-go pricing model, this also helps keep costs down.
+
 Launching the server is made straightforward thanks to the launch template, which CodeBuild updates with the ID of the newly-built AMI. Just execute:
 
     $  INSTANCE_ID=$(aws --query 'Instances[0].InstanceId' --output text ec2 run-instances --launch-template LaunchTemplateName=csgo-server)
