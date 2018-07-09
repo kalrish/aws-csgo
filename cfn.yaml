@@ -169,7 +169,7 @@ Resources:
                -
                   DeviceIndex: 0
                   Groups:
-                     - !Ref ServerSecurityGroup
+                     - !GetAtt ServerSecurityGroup.GroupId
                   SubnetId: !Ref ServerSubnet
                   AssociatePublicIpAddress: true
             TagSpecifications:
@@ -320,7 +320,7 @@ Resources:
                         Action: 'ec2:RunInstances'
                         Resource:
                            - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${ServerSubnet}'
-                           - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:security-group/${AmiBuildInstanceSecurityGroup}'
+                           - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:security-group/${AmiBuildInstanceSecurityGroup.GroupId}'
                            - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:network-interface/*'
                            - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:volume/*'
                            - !Sub 'arn:aws:ec2:${AWS::Region}::image/*'
