@@ -69,4 +69,31 @@ This process should be based on the AWS region closest to the players, which sho
      
      Restarting the instance itself will do as well.
  
-That's about it. Don't forget to stop the NAT instance when the AMI build finishes.
+That's about it. Don't forget to stop the NAT instance when the AMI build finishes. Now on to the fun part!
+
+
+Usage
+--------------------------------------------------------------------------------
+
+Launching the server is made straightforward thanks to the launch template, which CodeBuild updates with the ID of the newly-built AMI. Just execute:
+
+    $  INSTANCE_ID=$(aws --query 'Instances[0].InstanceId' --output text ec2 run-instances --launch-template LaunchTemplateName=csgo-server)
+
+The default instance type is `c5.large`, but a mere `t2.micro` might do, depending on your server configuration and the number of players. It is also useful for testing due to the lower price. Nevertheless, for real use, an instance type with greater compute power, ampler network bandwidth and more reliable performance characteristics will be better suited and offer a better experience.
+
+In order to connect to the instance, either through SSH or with the game client, you will need its IP address. You can retrieve its public IPv4 address using the following command:
+
+    $  INSTANCE_IP=$(aws --query 'Reservations[0].Instances[0].PublicIpAddress' --output text ec2 describe-instances --instance-ids ${INSTANCE_ID})
+
+To inspect the state of the server, upload your game configuration or perform any kind of maintenance, you can SSH into the instance as follows:
+
+    $  ssh -o StrictHostKeyChecking=no -i ~/.ssh/csgo.pem ubuntu@${INSTANCE_IP}
+
+After you are done playing, stop or terminate the server:
+
+    $  # The instance and its data is preserved, but you will still be charged for the EBS volume usage
+    $  aws ec2 stop-instances --instance-ids ${INSTANCE_ID}
+    $  # The instance is completely terminated and its EBS volumes destroyed
+    $  aws ec2 terminate-instances --instance-ids ${INSTANCE_ID}
+
+Have fun!
