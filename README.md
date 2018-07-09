@@ -102,7 +102,9 @@ Using the AWS server involves launching an instance, connecting to it and, final
      
      To inspect the state of the server, upload your game configuration or perform any kind of maintenance, you can SSH into the instance as follows:
      
-         $  ssh -o StrictHostKeyChecking=no -i ~/.ssh/csgo.pem ubuntu@${INSTANCE_IP}
+         $  ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -i ~/.ssh/csgo.pem ubuntu@${INSTANCE_IP}
+     
+     Without the `ServerAliveInterval` option of the OpenSSH client, the connection would end up being dropped when idle, which can be a hassle.
  
  3.  Stop or terminate the instance.
  
