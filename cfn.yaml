@@ -1,0 +1,439 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Platform to deploy, provision and manage Counter Strike: Global Offensive servers.'
+Parameters:
+   AmiBuildSubnetAvailabilityZone:
+      Description: 'Availability zone in which to create the subnet used to build the AMI. It must support CodeBuild.'
+      Type: 'AWS::EC2::AvailabilityZone::Name'
+   NatInstanceImageId:
+      Description: 'ID of the AMI to use for the NAT instance.'
+      Type: 'AWS::EC2::Image::Id'
+   NatInstanceKeyName:
+      Description: 'Name of the key pair to assign to the NAT instance, used to SSH into it.'
+      Type: 'AWS::EC2::KeyPair::KeyName'
+   NatInstanceType:
+      Description: 'Type of the NAT instance. Since it will only be used by CodeBuild to reach the ECS repository and EC2, it need not be any bigger than a t2.micro.'
+      Type: String
+      Default: t2.micro
+   VpcIpv4AddressBlock:
+      Description: 'IPv4 address block to assign to the VPC in CIDR format.'
+      Type: String
+      AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+      Default: '10.0.0.0/26'
+Metadata:
+   AWS::CloudFormation::Interface:
+      ParameterGroups:
+         -
+            Label:
+               default: VPC configuration
+            Parameters:
+               - VpcIpv4AddressBlock
+               - AmiBuildSubnetAvailabilityZone
+         -
+            Label:
+               default: NAT instance
+            Parameters:
+               - NatInstanceImageId
+               - NatInstanceKeyName
+               - NatInstanceType
+      ParameterLabels:
+         AmiBuildSubnetAvailabilityZone:
+            default: AMI build subnet availability zone
+         NatInstanceImageId:
+            default: AMI ID
+         NatInstanceKeyName:
+            default: Keypair name
+         NatInstanceType:
+            default: Instance type
+         VpcIpv4AddressBlock:
+            default: IPv4 address block
+Resources:
+   Vpc:
+      Type: 'AWS::EC2::VPC'
+      Properties:
+         CidrBlock: !Ref VpcIpv4AddressBlock
+   InternetGateway:
+      Type: 'AWS::EC2::InternetGateway'
+   InternetGatewayAttachment:
+      Type: 'AWS::EC2::VPCGatewayAttachment'
+      Properties:
+         InternetGatewayId: !Ref InternetGateway
+         VpcId: !Ref Vpc
+   ServerSubnet:
+      Type: 'AWS::EC2::Subnet'
+      Properties:
+         VpcId: !Ref Vpc
+         CidrBlock: !Select [ 0 , !Cidr [ !GetAtt Vpc.CidrBlock , 2 , 4 ] ]
+         MapPublicIpOnLaunch: true
+         Tags:
+            -
+               Key: Name
+               Value: csgo-server
+   ServerSubnetRouteTable:
+      Type: 'AWS::EC2::RouteTable'
+      Properties:
+         VpcId: !Ref Vpc
+   ServerSubnetRouteTableAssociation:
+      Type: 'AWS::EC2::SubnetRouteTableAssociation'
+      Properties:
+         RouteTableId: !Ref ServerSubnetRouteTable
+         SubnetId: !Ref ServerSubnet
+   ServerSubnetInternetRoute:
+      DependsOn: InternetGatewayAttachment
+      Type: 'AWS::EC2::Route'
+      Properties:
+         RouteTableId: !Ref ServerSubnetRouteTable
+         GatewayId: !Ref InternetGateway
+         DestinationCidrBlock: 0.0.0.0/0
+   ServerSecurityGroup:
+      Type: 'AWS::EC2::SecurityGroup'
+      Properties:
+         GroupDescription: 'Public Counter Strike: Global Offensive servers.'
+         SecurityGroupIngress:
+            -
+               Description: 'SSH access'
+               CidrIp: 0.0.0.0/0
+               FromPort: 22
+               ToPort: 22
+               IpProtocol: tcp
+            -
+               Description: 'Game communication'
+               CidrIp: 0.0.0.0/0
+               FromPort: 27015
+               ToPort: 27015
+               IpProtocol: tcp
+            -
+               Description: 'Game communication'
+               CidrIp: 0.0.0.0/0
+               FromPort: 27015
+               ToPort: 27015
+               IpProtocol: udp
+            -
+               Description: 'SourceTV transmission'
+               CidrIp: 0.0.0.0/0
+               FromPort: 27020
+               ToPort: 27020
+               IpProtocol: udp
+            -
+               Description: 'Client traffic'
+               CidrIp: 0.0.0.0/0
+               FromPort: 27005
+               ToPort: 27005
+               IpProtocol: udp
+            -
+               CidrIp: 0.0.0.0/0
+               FromPort: 4380
+               ToPort: 4380
+               IpProtocol: udp
+         VpcId: !Ref Vpc
+   ServerInstanceRole:
+      Type: AWS::IAM::Role
+      Properties:
+         AssumeRolePolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+               -
+                  Principal:
+                     Service: ec2.amazonaws.com
+                  Action: 'sts:AssumeRole'
+                  Effect: Allow
+         Policies:
+            -
+               PolicyName: secrets
+               PolicyDocument:
+                  Version: '2012-10-17'
+                  Statement:
+                     -
+                        Action: 'ssm:GetParameter'
+                        Resource:
+                           - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/csgo/gslt'
+                           - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/csgo/web-api-key'
+                        Effect: Allow
+   ServerInstanceProfile:
+      Type: AWS::IAM::InstanceProfile
+      Properties:
+         Roles:
+            - !Ref ServerInstanceRole
+   ServerLaunchTemplate:
+      Type: AWS::EC2::LaunchTemplate
+      Properties:
+         LaunchTemplateName: csgo-server
+         LaunchTemplateData:
+            InstanceType: c5.large
+            IamInstanceProfile:
+               Arn: !GetAtt ServerInstanceProfile.Arn
+            KeyName: csgo
+            NetworkInterfaces:
+               -
+                  DeviceIndex: 0
+                  Groups:
+                     - !Ref ServerSecurityGroup
+                  SubnetId: !Ref ServerSubnet
+                  AssociatePublicIpAddress: true
+            TagSpecifications:
+               -
+                  ResourceType: instance
+                  Tags:
+                     -
+                        Key: Name
+                        Value: 'CS:GO server'
+   NatSecurityGroup:
+      Type: 'AWS::EC2::SecurityGroup'
+      Properties:
+         GroupDescription: 'Instances in the private subnets, which must be able to access the NAT instance in order to initiate network connections outside of the VPC.'
+         VpcId: !Ref Vpc
+   NatInstanceSecurityGroup:
+      Type: 'AWS::EC2::SecurityGroup'
+      Properties:
+         GroupDescription: 'NAT instance, to which instances residing in the private subnet must be allowed access.'
+         SecurityGroupIngress:
+            -
+               SourceSecurityGroupId: !GetAtt NatSecurityGroup.GroupId
+               FromPort: '-1'
+               ToPort: '-1'
+               IpProtocol: '-1'
+         VpcId: !Ref Vpc
+   NatInstance:
+      Type: 'AWS::EC2::Instance'
+      Properties:
+         InstanceType: !Ref NatInstanceType
+         ImageId: !Ref NatInstanceImageId
+         KeyName: !Ref NatInstanceKeyName
+         NetworkInterfaces:
+            -
+               DeviceIndex: 0
+               GroupSet:
+                  - !GetAtt NatInstanceSecurityGroup.GroupId
+               SubnetId: !Ref ServerSubnet
+               AssociatePublicIpAddress: true
+         SourceDestCheck: false
+         Tags:
+            -
+               Key: Name
+               Value: 'CS:GO NAT'
+      DependsOn: InternetGatewayAttachment
+   AmiBuildSubnet:
+      Type: 'AWS::EC2::Subnet'
+      Properties:
+         VpcId: !Ref Vpc
+         CidrBlock: !Select [ 1, !Cidr [ !GetAtt Vpc.CidrBlock, 2, 4 ] ]
+         AvailabilityZone: !Ref AmiBuildSubnetAvailabilityZone
+         Tags:
+            -
+               Key: Name
+               Value: csgo-amibuild
+   AmiBuildSubnetRouteTable:
+      Type: 'AWS::EC2::RouteTable'
+      Properties:
+         VpcId: !Ref Vpc
+   AmiBuildSubnetRouteTableAssociation:
+      Type: 'AWS::EC2::SubnetRouteTableAssociation'
+      Properties:
+         RouteTableId: !Ref AmiBuildSubnetRouteTable
+         SubnetId: !Ref AmiBuildSubnet
+   AmiBuildSubnetNatRoute:
+      Type: 'AWS::EC2::Route'
+      Properties:
+         RouteTableId: !Ref AmiBuildSubnetRouteTable
+         InstanceId: !Ref NatInstance
+         DestinationCidrBlock: 0.0.0.0/0
+   AmiBuildContainerSecurityGroup:
+      Type: 'AWS::EC2::SecurityGroup'
+      Properties:
+         GroupDescription: 'CodeBuild project building the Counter Strike: Global Offensive AMI, which must access the instance used to that end over SSH.'
+         VpcId: !Ref Vpc
+   AmiBuildInstanceSecurityGroup:
+      Type: 'AWS::EC2::SecurityGroup'
+      Properties:
+         GroupDescription: 'Instances used to create the Counter Strike: Global Offensive AMIs, which must allow SSH access to the CodeBuild-based container.'
+         SecurityGroupIngress:
+            -
+               SourceSecurityGroupId: !GetAtt AmiBuildContainerSecurityGroup.GroupId
+               FromPort: 22
+               ToPort: 22
+               IpProtocol: tcp
+         VpcId: !Ref Vpc
+   AmiBuildRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+         AssumeRolePolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+               -
+                  Principal:
+                     Service: 'codebuild.amazonaws.com'
+                  Action: 'sts:AssumeRole'
+                  Effect: Allow
+         Policies:
+            -
+               PolicyName: vpc
+               PolicyDocument:
+                  Version: '2012-10-17'
+                  Statement:
+                     -
+                        Action:
+                           - 'ec2:CreateNetworkInterface'
+                           - 'ec2:DeleteNetworkInterface'
+                           - 'ec2:DescribeDhcpOptions'
+                           - 'ec2:DescribeNetworkInterfaces'
+                           - 'ec2:DescribeSecurityGroups'
+                           - 'ec2:DescribeSubnets'
+                           - 'ec2:DescribeVpcs'
+                        Resource: '*'
+                        Effect: Allow
+                     -
+                        Action: 'ec2:CreateNetworkInterfacePermission'
+                        Resource: !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:network-interface/*'
+                        Condition:
+                           StringEquals:
+                              ec2:Subnet: !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${AmiBuildSubnet}'
+                              ec2:AuthorizedService: codebuild.amazonaws.com
+                        Effect: Allow
+            -
+               PolicyName: ssm
+               PolicyDocument:
+                  Version: '2012-10-17'
+                  Statement:
+                     -
+                        Action: 'ssm:GetParameters'
+                        Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/csgo/ssh-key'
+                        Effect: Allow
+            -
+               PolicyName: ami
+               PolicyDocument:
+                  Version: '2012-10-17'
+                  Statement:
+                     -
+                        Action: 'ec2:DescribeImages'
+                        Resource: '*'
+                        Effect: Allow
+                     -
+                        Action: 'ec2:RunInstances'
+                        Resource: !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/*'
+                        Condition:
+                           StringEquals:
+                              aws:RequestTag/Packer: 'csgo'
+                        Effect: Allow
+                     -
+                        Action: 'ec2:RunInstances'
+                        Resource:
+                           - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${ServerSubnet}'
+                           - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:security-group/${AmiBuildInstanceSecurityGroup}'
+                           - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:network-interface/*'
+                           - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:volume/*'
+                           - !Sub 'arn:aws:ec2:${AWS::Region}::image/*'
+                           - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:key-pair/csgo'
+                        Effect: Allow
+                     -
+                        Action: 'ec2:CreateTags'
+                        Resource: !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/*'
+                        Condition:
+                           StringEquals:
+                              ec2:CreateAction: 'RunInstances'
+                        Effect: Allow
+                     -
+                        Action: 'ec2:DescribeInstances'
+                        Resource: '*'
+                        Effect: Allow
+                     -
+                        Action:
+                           - 'ec2:StopInstances'
+                           - 'ec2:TerminateInstances'
+                        Resource: !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/*'
+                        Condition:
+                           StringEquals:
+                              ec2:ResourceTag/Packer: 'csgo'
+                        Effect: Allow
+                     -
+                        Action:
+                           - 'ec2:CreateImage'
+                           - 'ec2:RegisterImage'
+                           - 'ec2:ModifyImageAttribute'
+                        Resource: '*'
+                        Effect: Allow
+                     -
+                        Action: 'ec2:DescribeVolumes'
+                        Resource: '*'
+                        Effect: Allow
+            -
+               PolicyName: launch-template
+               PolicyDocument:
+                  Version: '2012-10-17'
+                  Statement:
+                     -
+                        Action: 'ec2:DescribeLaunchTemplates'
+                        Resource: '*'
+                        Effect: Allow
+                     -
+                        Action: 'ec2:CreateLaunchTemplateVersion'
+                        Resource: !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:launch-template/${ServerLaunchTemplate}'
+                        Effect: Allow
+                     -
+                        Action: 'ec2:ModifyLaunchTemplate'
+                        Resource: !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:launch-template/${ServerLaunchTemplate}'
+                        Effect: Allow
+   AmiBuildLogsPolicy:
+      Type: AWS::IAM::Policy
+      Properties:
+         PolicyName: logs
+         PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+               -
+                  Action: 'logs:CreateLogGroup'
+                  Resource: '*'
+                  Effect: Allow
+               -
+                  Action: 'logs:CreateLogStream'
+                  Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AmiBuildProject}:log-stream:*'
+                  Effect: Allow
+               -
+                  Action: 'logs:PutLogEvents'
+                  Resource:
+                     - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AmiBuildProject}'
+                     - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AmiBuildProject}:*:*'
+                  Effect: Allow
+         Roles:
+            - !Ref AmiBuildRole
+   AmiBuildProject:
+      Type: 'AWS::CodeBuild::Project'
+      Properties:
+         Name: csgo-ami
+         Description: 'Build AMI to host Counter Strike: Global Offensive server.'
+         ServiceRole: !GetAtt AmiBuildRole.Arn
+         Source:
+            Type: GITHUB
+            Location: 'https://github.com/kalrish/aws-csgo.git'
+            GitCloneDepth: 1
+            BuildSpec: 'buildspec.yaml'
+         Environment:
+            Type: LINUX_CONTAINER
+            ComputeType: BUILD_GENERAL1_SMALL
+            Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/ami-build-env'
+            PrivilegedMode: false
+            EnvironmentVariables:
+               -
+                  Name: INSTANCE_VPC
+                  Type: PLAINTEXT
+                  Value: !Ref Vpc
+               -
+                  Name: INSTANCE_SUBNET
+                  Type: PLAINTEXT
+                  Value: !Ref ServerSubnet
+               -
+                  Name: INSTANCE_SECURITY_GROUPS
+                  Type: PLAINTEXT
+                  Value: !Sub '${AmiBuildInstanceSecurityGroup.GroupId}'
+               -
+                  Name: LAUNCH_TEMPLATE
+                  Type: PLAINTEXT
+                  Value: !Ref ServerLaunchTemplate
+         VpcConfig:
+            VpcId: !Ref Vpc
+            Subnets:
+               - !Ref AmiBuildSubnet
+            SecurityGroupIds:
+               - !GetAtt NatSecurityGroup.GroupId
+               - !GetAtt AmiBuildContainerSecurityGroup.GroupId
+         Artifacts:
+            Type: NO_ARTIFACTS
