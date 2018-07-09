@@ -14,11 +14,11 @@ Deployment
 
 This process should be based on the AWS region closest to the players, which should offer them the lowest latency and therefore a better experience. Nevertheless, pricing differences amongst regions might be a concern, so be sure to check!
 
- 1.  Deploy the stack.
+ 1.  **Deploy the stack.**
  
      Deploy a new CloudFormation stack based on the `cfn.yaml` template. None of the resources will incur in any costs at this point, except for the NAT instance, which is required by the CodeBuild project to reach the EC2 and SSM services and might be safely stopped when not needed.
  
- 2.  Create the key pair.
+ 2.  **Create the key pair.**
  
      1.  Create the EC2 key pair, saving the private key.
      
@@ -30,7 +30,7 @@ This process should be based on the AWS region closest to the players, which sho
          
          CodeBuild will retrieve it later to build the AMI. Since it will do so in a safe manner, a separate key pair is not required.
  
- 3.  Build the server image.
+ 3.  **Build the server image.**
  
      The installation and configuration of the _Counter Strike: Global Offensive_ server takes some time. To avoid having to repeat that effort needlessly, the process is performed once and saved as an EC2 machine image, which is then used to spawn instances from it.
      
@@ -44,7 +44,7 @@ This process should be based on the AWS region closest to the players, which sho
      
      While you wait for the process to complete, continue with the next steps. When it finishes, you can stop the NAT instance.
  
- 4.  Upload your secrets.
+ 4.  **Upload your secrets.**
  
      A couple of keys are needed for the game server to function properly. In order to streamline their management and enable their replacement while keeping them safe, the parameter store is made use of.
      
@@ -82,7 +82,7 @@ Usage
 
 Using the AWS server involves launching an instance, connecting to it and, finally, stopping or terminating it when you are done playing. This is made possible by the AMI, which lets us dispose of instances as we please and provides for a recovery strategy in case of failure. Thanks to Amazon's pay-as-you-go pricing model, this also helps keep costs down.
 
- 1.  Launch the instance.
+ 1.  **Launch the instance.**
  
      Launching the server is made straightforward thanks to the launch template, which CodeBuild updates with the ID of the newly-built AMI. Just execute:
      
@@ -90,7 +90,7 @@ Using the AWS server involves launching an instance, connecting to it and, final
      
      The default instance type is `c5.large`, but a mere `t2.micro` might do, depending on your server configuration and the number of players. It is also useful for testing due to the lower price. Nevertheless, for real use, an instance type with greater compute power, ampler network bandwidth and more reliable performance characteristics will be better suited and offer a better experience.
  
- 2.  Connect to the instance.
+ 2.  **Connect to the instance.**
  
      In order to connect to the instance, either through SSH or with the game client, you will need its IP address. You can retrieve its public IPv4 address using the following command:
      
@@ -106,7 +106,7 @@ Using the AWS server involves launching an instance, connecting to it and, final
      
      Without the `ServerAliveInterval` option of the OpenSSH client, the connection would end up being dropped when idle, which can be a hassle.
  
- 3.  Stop or terminate the instance.
+ 3.  **Stop or terminate the instance.**
  
      After you are done playing, stop or terminate the server:
      
