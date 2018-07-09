@@ -224,6 +224,7 @@ Resources:
                IpProtocol: '-1'
          VpcId: !Ref Vpc
    NatInstance:
+      DependsOn: InternetGatewayAttachment
       Type: 'AWS::EC2::Instance'
       Properties:
          InstanceType: !Ref NatInstanceType
@@ -241,7 +242,6 @@ Resources:
             -
                Key: Name
                Value: 'CS:GO NAT'
-      DependsOn: InternetGatewayAttachment
    AmiBuildSubnet:
       DependsOn: Ipv6VpcCidrBlock
       Type: 'AWS::EC2::Subnet'
