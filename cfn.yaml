@@ -109,6 +109,12 @@ Resources:
          RouteTableId: !Ref ServerSubnetRouteTable
          GatewayId: !Ref InternetGateway
          DestinationCidrBlock: 0.0.0.0/0
+   ServerSubnetEgressInternetGatewayRoute:
+      Type: 'AWS::EC2::Route'
+      Properties:
+         RouteTableId: !Ref ServerSubnetRouteTable
+         EgressOnlyInternetGatewayId: !Ref EgressInternetGateway
+         DestinationIpv6CidrBlock: '::/0'
    ServerSecurityGroup:
       Type: 'AWS::EC2::SecurityGroup'
       Properties:
