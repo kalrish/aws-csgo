@@ -277,6 +277,12 @@ Resources:
          RouteTableId: !Ref AmiBuildSubnetRouteTable
          InstanceId: !Ref NatInstance
          DestinationCidrBlock: 0.0.0.0/0
+   AmiBuildSubnetEgressInternetGatewayRoute:
+      Type: 'AWS::EC2::Route'
+      Properties:
+         RouteTableId: !Ref AmiBuildSubnetRouteTable
+         EgressOnlyInternetGatewayId: !Ref EgressInternetGateway
+         DestinationIpv6CidrBlock: '::/0'
    AmiBuildContainerSecurityGroup:
       Type: 'AWS::EC2::SecurityGroup'
       Properties:
