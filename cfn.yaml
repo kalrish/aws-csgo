@@ -256,6 +256,7 @@ Resources:
                   - !GetAtt Vpc.Ipv6CidrBlocks
                - 2
                - 64
+         AssignIpv6AddressOnCreation: true
          AvailabilityZone: !Ref AmiBuildSubnetAvailabilityZone
          Tags:
             -
