@@ -80,6 +80,19 @@ Resources:
             -
                Key: Name
                Value: csgo-server
+   ServerSubnetIpv6CidrBlock:
+      DependsOn: Ipv6VpcCidrBlock
+      Type: 'AWS::EC2::SubnetCidrBlock'
+      Properties:
+         Ipv6CidrBlock: !Select
+            - 0
+            - !Cidr
+               - !Select
+                  - 0
+                  - !GetAtt Vpc.Ipv6CidrBlocks
+               - 2
+               - 64
+         SubnetId: !Ref ServerSubnet
    ServerSubnetRouteTable:
       Type: 'AWS::EC2::RouteTable'
       Properties:
