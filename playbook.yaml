@@ -1,0 +1,5 @@
+---
+- name: 'AWS-based Counter Strike: Global Offensive game server'
+  hosts: all
+  roles:
+     - csgo_server
