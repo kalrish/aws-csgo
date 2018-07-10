@@ -65,6 +65,10 @@ Resources:
          CidrBlock: !Ref VpcIpv4AddressBlock
          EnableDnsSupport: true
          EnableDnsHostnames: true
+         Tags:
+            -
+               Key: Name
+               Value: csgo
    Ipv6VpcCidrBlock:
       Type: AWS::EC2::VPCCidrBlock
       Properties:
