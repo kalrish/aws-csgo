@@ -82,19 +82,11 @@ Resources:
       Properties:
          VpcId: !Ref Vpc
    ServerSubnet:
+      DependsOn: Ipv6VpcCidrBlock
       Type: AWS::EC2::Subnet
       Properties:
          VpcId: !Ref Vpc
          CidrBlock: !Select [ 0 , !Cidr [ !GetAtt Vpc.CidrBlock , 2 , 4 ] ]
-         MapPublicIpOnLaunch: true
-         Tags:
-            -
-               Key: Name
-               Value: csgo-server
-   ServerSubnetIpv6CidrBlock:
-      DependsOn: Ipv6VpcCidrBlock
-      Type: AWS::EC2::SubnetCidrBlock
-      Properties:
          Ipv6CidrBlock: !Select
             - 0
             - !Cidr
@@ -103,7 +95,11 @@ Resources:
                   - !GetAtt Vpc.Ipv6CidrBlocks
                - 2
                - 64
-         SubnetId: !Ref ServerSubnet
+         AssignIpv6AddressOnCreation: true
+         Tags:
+            -
+               Key: Name
+               Value: csgo-server
    ServerSubnetRouteTable:
       Type: AWS::EC2::RouteTable
       Properties:
