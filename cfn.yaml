@@ -122,14 +122,14 @@ Resources:
       Properties:
          RouteTableId: !Ref ServerSubnetRouteTable
          SubnetId: !Ref ServerSubnet
-   ServerSubnetInternetRoute:
+   ServerSubnetInternetIpv4Route:
       DependsOn: InternetGatewayAttachment
       Type: AWS::EC2::Route
       Properties:
          RouteTableId: !Ref ServerSubnetRouteTable
          GatewayId: !Ref InternetGateway
          DestinationCidrBlock: 0.0.0.0/0
-   ServerSubnetEgressInternetGatewayRoute:
+   ServerSubnetInternetIpv6Route:
       DependsOn: InternetGatewayAttachment
       Type: AWS::EC2::Route
       Properties:
@@ -326,13 +326,13 @@ Resources:
       Properties:
          RouteTableId: !Ref AmiBuildSubnetRouteTable
          SubnetId: !Ref AmiBuildSubnet
-   AmiBuildSubnetNatRoute:
+   AmiBuildSubnetInternetIpv4Route:
       Type: AWS::EC2::Route
       Properties:
          RouteTableId: !Ref AmiBuildSubnetRouteTable
          InstanceId: !Ref NatInstance
          DestinationCidrBlock: 0.0.0.0/0
-   AmiBuildSubnetEgressInternetGatewayRoute:
+   AmiBuildSubnetInternetIpv6Route:
       Type: AWS::EC2::Route
       Properties:
          RouteTableId: !Ref AmiBuildSubnetRouteTable
