@@ -117,10 +117,11 @@ Resources:
          GatewayId: !Ref InternetGateway
          DestinationCidrBlock: 0.0.0.0/0
    ServerSubnetEgressInternetGatewayRoute:
+      DependsOn: InternetGatewayAttachment
       Type: AWS::EC2::Route
       Properties:
          RouteTableId: !Ref ServerSubnetRouteTable
-         EgressOnlyInternetGatewayId: !Ref EgressInternetGateway
+         GatewayId: !Ref InternetGateway
          DestinationIpv6CidrBlock: '::/0'
    ServerSecurityGroup:
       Type: AWS::EC2::SecurityGroup
