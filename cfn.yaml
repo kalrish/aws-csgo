@@ -346,7 +346,7 @@ Resources:
          Tags:
             -
                Key: Name
-               Value: csgo-ami-container
+               Value: csgo-amibuild-container
    AmiBuildInstanceSecurityGroup:
       Type: AWS::EC2::SecurityGroup
       Properties:
@@ -361,7 +361,7 @@ Resources:
          Tags:
             -
                Key: Name
-               Value: csgo-ami-instance
+               Value: csgo-amibuild-instance
    AmiBuildRole:
       Type: AWS::IAM::Role
       Properties:
