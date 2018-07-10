@@ -116,3 +116,11 @@ Using the AWS server involves launching an instance, connecting to it and, final
          $  aws ec2 terminate-instances --instance-ids ${INSTANCE_ID}
 
 Have fun!
+
+
+Supported distributions
+--------------------------------------------------------------------------------
+
+Currently supported distributions are listed below:
+
+ -  Ubuntu 18.04
