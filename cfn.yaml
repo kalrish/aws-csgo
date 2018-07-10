@@ -108,6 +108,10 @@ Resources:
       Type: AWS::EC2::RouteTable
       Properties:
          VpcId: !Ref Vpc
+         Tags:
+            -
+               Key: Name
+               Value: csgo-server
    ServerSubnetRouteTableAssociation:
       Type: AWS::EC2::SubnetRouteTableAssociation
       Properties:
@@ -308,6 +312,10 @@ Resources:
       Type: AWS::EC2::RouteTable
       Properties:
          VpcId: !Ref Vpc
+         Tags:
+            -
+               Key: Name
+               Value: csgo-amibuild
    AmiBuildSubnetRouteTableAssociation:
       Type: AWS::EC2::SubnetRouteTableAssociation
       Properties:
