@@ -326,6 +326,25 @@ Resources:
       Properties:
          RouteTableId: !Ref AmiBuildSubnetRouteTable
          SubnetId: !Ref AmiBuildSubnet
+   SourcesBucket:
+      Type: 'AWS::S3::Bucket'
+   S3Endpoint:
+      Type: 'AWS::EC2::VPCEndpoint'
+      Properties:
+         ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+         PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+               -
+                  Principal: '*'
+                  Resource:
+                     - !Sub '${SourcesBucket.Arn}'
+                     - !Sub '${SourcesBucket.Arn}/*'
+                  Action: 's3:GetObject'
+                  Effect: Allow
+         RouteTableIds:
+            - !Ref AmiBuildSubnetRouteTable
+         VpcId: !Ref Vpc
 #   AmiBuildSubnetInternetIpv4Route:
 #      Type: AWS::EC2::Route
 #      Properties:
@@ -347,52 +366,6 @@ Resources:
             -
                Key: Name
                Value: csgo-amibuild-container
-   S3EndpointSecurityGroup:
-      Type: AWS::EC2::SecurityGroup
-      Properties:
-         GroupDescription: 'S3 VPC endpoint.'
-         SecurityGroupIngress:
-            -
-               Description: 'HTTP-based access'
-               SourceSecurityGroupId: !GetAtt AmiBuildContainerSecurityGroup.GroupId
-               FromPort: 80
-               ToPort: 80
-               IpProtocol: tcp
-            -
-               Description: 'HTTPS-based access'
-               SourceSecurityGroupId: !GetAtt AmiBuildContainerSecurityGroup.GroupId
-               FromPort: 443
-               ToPort: 443
-               IpProtocol: tcp
-            -
-               SourceSecurityGroupId: !GetAtt AmiBuildContainerSecurityGroup.GroupId
-               FromPort: '-1'
-               ToPort: '-1'
-               IpProtocol: '-1'
-         VpcId: !Ref Vpc
-         Tags:
-            -
-               Key: Name
-               Value: csgo-s3endpoint
-   S3Endpoint:
-      Type: 'AWS::EC2::VPCEndpoint'
-      Properties:
-         ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
-         PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-               -
-                  Principal: '*'
-                  Resource: !GetAtt Bucket.Arn
-                  Action: 's3:GetObject'
-                  Effect: Allow
-         RouteTableIds:
-            - !Ref AmiBuildSubnetRouteTable
-         SecurityGroupIds:
-            - !GetAtt S3EndpointSecurityGroup.GroupId
-         SubnetIds:
-            - !Ref AmiBuildSubnet
-         VpcId: !Ref Vpc
    AmiBuildInstanceSecurityGroup:
       Type: AWS::EC2::SecurityGroup
       Properties:
@@ -526,6 +499,17 @@ Resources:
                      -
                         Action: 'ec2:ModifyLaunchTemplate'
                         Resource: !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:launch-template/${ServerLaunchTemplate}'
+                        Effect: Allow
+            -
+               PolicyName: s3
+               PolicyDocument:
+                  Version: '2012-10-17'
+                  Statement:
+                     -
+                        Action:
+                           - 's3:Get*'
+                           - 's3:List*'
+                        Resource: 'arn:aws:s3:::*'
                         Effect: Allow
    AmiBuildLogsPolicy:
       Type: AWS::IAM::Policy

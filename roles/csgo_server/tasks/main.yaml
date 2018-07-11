@@ -127,12 +127,12 @@
      group: steam
   become: yes
   become_user: steam
-- name: Install game server
-  command: '{{ steamcmd_path.stdout }} +login anonymous +force_install_dir {{ csgo_install_dir }} +app_update 740 validate +quit'
-  args:
-     chdir: '{{ csgo_install_dir }}'
-  become: yes
-  become_user: steam
+#- name: Install game server
+#  command: '{{ steamcmd_path.stdout }} +login anonymous +force_install_dir {{ csgo_install_dir }} +app_update 740 validate +quit'
+#  args:
+#     chdir: '{{ csgo_install_dir }}'
+#  become: yes
+#  become_user: steam
 - name: Upload systemd services
   template:
      src: 'csgo-{{ item }}.service'

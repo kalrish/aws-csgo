@@ -6,29 +6,28 @@ env:
       INSTANCE_TYPE: 'c5.large'
       SHELL_EXECUTE_COMMAND: '/bin/sh -ex --'
       SSH_USER: 'ubuntu'
-   parameter-store:
-      PRIVATE_KEY: '/csgo/ssh-key'
 
 phases:
    build:
       commands:
-         # The following filters may be used to retrieve the latest Arch Linux EBS-based AMI:
-         #  --owners 093273469852 --filters 'Name=name,Values=arch-linux-hvm-*.x86_64-ebs' Name=virtualization-type,Values=hvm Name=root-device-type,Values=ebs
          - |
-            if test -z ${SOURCE_AMI_ID+x} ; then export SOURCE_AMI_ID="$(aws --query 'sort_by(Images,&CreationDate)[-1].ImageId' --output text ec2 describe-images --owners 099720109477 --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*' Name=virtualization-type,Values=hvm Name=root-device-type,Values=ebs)" ; echo "Source AMI ID: ${SOURCE_AMI_ID}" ; fi
-         - echo "${PRIVATE_KEY}" > csgo.pem
-         - chmod 0600 csgo.pem
-         # If SteamCMD is to be installed manually, the relevant files should be downloaded and processed here, so that it is possible to cache them
-         #- curl -sS -o steamcmd.tar.gz 'http://media.steampowered.com/installer/steamcmd_linux.tar.gz'
-         #- mkdir -p roles/csgo_server/files
-         #- tar -xzf steamcmd.tar.gz -C roles/csgo_server/files
-         - packer build template.json
-         - cat -- manifest.json
-         - |
-            AMI_ID="$(jq -r '.builds[0].artifact_id' -- manifest.json | cut -d : -f 2)"
-         - LAUNCH_TEMPLATE_OLD="$(aws --query 'LaunchTemplates[0].LatestVersionNumber' --output text ec2 describe-launch-templates --launch-template-ids "${LAUNCH_TEMPLATE}")"
-         - |
-            LAUNCH_TEMPLATE_NEW="$(aws --query 'LaunchTemplateVersion.VersionNumber' --output text ec2 create-launch-template-version --launch-template-id "${LAUNCH_TEMPLATE}" --source-version "${LAUNCH_TEMPLATE_OLD}" --launch-template-data "{\"ImageId\":\"${AMI_ID}\"}")"
-         - aws ec2 modify-launch-template --launch-template-id "${LAUNCH_TEMPLATE}" --default-version "${LAUNCH_TEMPLATE_NEW}"
-         - |
-            echo "Updated ${NAME} launch template version: ${LAUNCH_TEMPLATE_NEW}"
+            for i in {1..100000} ; do echo "$i" ; done
+#         # The following filters may be used to retrieve the latest Arch Linux EBS-based AMI:
+#         #  --owners 093273469852 --filters 'Name=name,Values=arch-linux-hvm-*.x86_64-ebs' Name=virtualization-type,Values=hvm Name=root-device-type,Values=ebs
+#         - |
+#            if test -z ${SOURCE_AMI_ID+x} ; then export SOURCE_AMI_ID="$(aws --query 'sort_by(Images,&CreationDate)[-1].ImageId' --output text ec2 describe-images --owners 099720109477 --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*' Name=virtualization-type,Values=hvm Name=root-device-type,Values=ebs)" ; echo "Source AMI ID: ${SOURCE_AMI_ID}" ; fi
+#         - chmod 0600 csgo.pem
+#         # If SteamCMD is to be installed manually, the relevant files should be downloaded and processed here, so that it is possible to cache them
+#         #- curl -sS -o steamcmd.tar.gz 'http://media.steampowered.com/installer/steamcmd_linux.tar.gz'
+#         #- mkdir -p roles/csgo_server/files
+#         #- tar -xzf steamcmd.tar.gz -C roles/csgo_server/files
+#         - packer build template.json
+#         - cat -- manifest.json
+#         - |
+#            AMI_ID="$(jq -r '.builds[0].artifact_id' -- manifest.json | cut -d : -f 2)"
+#         - LAUNCH_TEMPLATE_OLD="$(aws --query 'LaunchTemplates[0].LatestVersionNumber' --output text ec2 describe-launch-templates --launch-template-ids "${LAUNCH_TEMPLATE}")"
+#         - |
+#            LAUNCH_TEMPLATE_NEW="$(aws --query 'LaunchTemplateVersion.VersionNumber' --output text ec2 create-launch-template-version --launch-template-id "${LAUNCH_TEMPLATE}" --source-version "${LAUNCH_TEMPLATE_OLD}" --launch-template-data "{\"ImageId\":\"${AMI_ID}\"}")"
+#         - aws ec2 modify-launch-template --launch-template-id "${LAUNCH_TEMPLATE}" --default-version "${LAUNCH_TEMPLATE_NEW}"
+#         - |
+#            echo "Updated ${NAME} launch template version: ${LAUNCH_TEMPLATE_NEW}"
