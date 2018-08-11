@@ -219,8 +219,8 @@ Resources:
                      -
                         Action: 'ssm:GetParameter'
                         Resource:
-                           - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/csgo/gslt'
-                           - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/csgo/web-api-key'
+                           - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/csgo/gslt'
+                           - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/csgo/web-api-key'
                         Effect: Allow
    ServerInstanceProfile:
       Type: AWS::IAM::InstanceProfile
@@ -392,10 +392,10 @@ Resources:
                         Effect: Allow
                      -
                         Action: 'ec2:CreateNetworkInterfacePermission'
-                        Resource: !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:network-interface/*'
+                        Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:network-interface/*'
                         Condition:
                            StringEquals:
-                              ec2:Subnet: !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${AmiBuildSubnet}'
+                              ec2:Subnet: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${AmiBuildSubnet}'
                               ec2:AuthorizedService: codebuild.amazonaws.com
                         Effect: Allow
             -
@@ -405,7 +405,7 @@ Resources:
                   Statement:
                      -
                         Action: 'ssm:GetParameters'
-                        Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/csgo/ssh-key'
+                        Resource: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/csgo/ssh-key'
                         Effect: Allow
             -
                PolicyName: ami
@@ -418,7 +418,7 @@ Resources:
                         Effect: Allow
                      -
                         Action: 'ec2:RunInstances'
-                        Resource: !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/*'
+                        Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/*'
                         Condition:
                            StringEquals:
                               aws:RequestTag/Packer: 'csgo'
@@ -426,16 +426,16 @@ Resources:
                      -
                         Action: 'ec2:RunInstances'
                         Resource:
-                           - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${ServerSubnet}'
-                           - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:security-group/${AmiBuildInstanceSecurityGroup.GroupId}'
-                           - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:network-interface/*'
-                           - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:volume/*'
-                           - !Sub 'arn:aws:ec2:${AWS::Region}::image/*'
-                           - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:key-pair/csgo'
+                           - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${ServerSubnet}'
+                           - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:security-group/${AmiBuildInstanceSecurityGroup.GroupId}'
+                           - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:network-interface/*'
+                           - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:volume/*'
+                           - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}::image/*'
+                           - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:key-pair/csgo'
                         Effect: Allow
                      -
                         Action: 'ec2:CreateTags'
-                        Resource: !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/*'
+                        Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/*'
                         Condition:
                            StringEquals:
                               ec2:CreateAction: 'RunInstances'
@@ -448,7 +448,7 @@ Resources:
                         Action:
                            - 'ec2:StopInstances'
                            - 'ec2:TerminateInstances'
-                        Resource: !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/*'
+                        Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/*'
                         Condition:
                            StringEquals:
                               ec2:ResourceTag/Packer: 'csgo'
@@ -475,11 +475,11 @@ Resources:
                         Effect: Allow
                      -
                         Action: 'ec2:CreateLaunchTemplateVersion'
-                        Resource: !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:launch-template/${ServerLaunchTemplate}'
+                        Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:launch-template/${ServerLaunchTemplate}'
                         Effect: Allow
                      -
                         Action: 'ec2:ModifyLaunchTemplate'
-                        Resource: !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:launch-template/${ServerLaunchTemplate}'
+                        Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:launch-template/${ServerLaunchTemplate}'
                         Effect: Allow
    AmiBuildLogsPolicy:
       Type: AWS::IAM::Policy
@@ -494,13 +494,13 @@ Resources:
                   Effect: Allow
                -
                   Action: 'logs:CreateLogStream'
-                  Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AmiBuildProject}:log-stream:*'
+                  Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AmiBuildProject}:log-stream:*'
                   Effect: Allow
                -
                   Action: 'logs:PutLogEvents'
                   Resource:
-                     - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AmiBuildProject}'
-                     - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AmiBuildProject}:*:*'
+                     - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AmiBuildProject}'
+                     - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AmiBuildProject}:*:*'
                   Effect: Allow
          Roles:
             - !Ref AmiBuildRole
